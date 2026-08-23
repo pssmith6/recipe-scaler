@@ -46,13 +46,35 @@ categories, or convert a count unit to a different unit, throws.
 factor from the recipe's own `servings` field. Neither mutates its input -
 both return a new `Recipe`.
 
+Scaling produces exact decimals (5.625 cups), which isn't something anyone
+can actually measure. `roundQuantityToCookingFraction` rounds a scaled
+quantity to the nearest amount a cook could hit with standard cups and
+spoons - eighths for tsp/tbsp, thirds and eighths for cups, quarters for
+oz/lb/whole units - and rounds scale-and-container units (g, kg, ml, l) to a
+sensible decimal place instead. `formatQuantity` renders the result as a
+recipe card would print it:
+
+```ts
+import { formatQuantity, roundQuantityToCookingFraction } from 'recipe-scaler';
+
+const rounded = roundQuantityToCookingFraction({ amount: 2.2, unit: 'cup' });
+// { amount: 2.25, unit: 'cup' }
+
+formatQuantity({ amount: 2.2, unit: 'cup' });
+// '2 1/4 cup'
+```
+
+Both functions are separate from scaling on purpose: scaling stays exact so
+rounding error doesn't compound across repeated scale calls, and rounding is
+applied once, right before a quantity is displayed to a cook.
+
 ## Status
 
-Early skeleton: linear scaling and same-category unit conversion. Not yet
-handled: rounding scaled amounts into fractions a cook would actually
-measure, non-linear adjustments (spices and leavening rarely scale 1:1),
-and volume/weight conversions across ingredients (which need density, not
-just a unit table).
+Linear scaling, same-category unit conversion, and fraction rounding for
+display. Not yet handled: non-linear adjustments (spices and leavening
+rarely scale 1:1), scaling by pan size, parsing quantities out of plain
+ingredient text, and volume/weight conversions across ingredients (which
+need density, not just a unit table).
 
 ## License
 
