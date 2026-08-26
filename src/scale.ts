@@ -1,15 +1,48 @@
 import { Quantity } from './units';
 
+// 'linear' (the default) scales 1:1 with the rest of the recipe. Spices and
+// leavening are potent in small amounts - doubling a batch doesn't mean
+// doubling the cinnamon or baking soda, since the effect isn't proportional
+// to volume the way flour or butter is.
+export type IngredientCategory = 'linear' | 'spice' | 'leavening';
+
 export interface Ingredient {
   name: string;
   quantity: Quantity;
   note?: string;
+  category?: IngredientCategory;
 }
 
 export interface Recipe {
   name: string;
   servings: number;
   ingredients: Ingredient[];
+}
+
+// How much of the recipe's overall scale factor to actually apply to a
+// non-linear ingredient, as a fraction of the deviation from 1x. Leavening
+// gets dampened harder than spices: too much baking soda or baking powder
+// ruins texture and leaves a metallic taste, where a bit too much spice is
+// merely stronger.
+const NONLINEAR_EXPONENTS: Record<Exclude<IngredientCategory, 'linear'>, number> = {
+  spice: 0.75,
+  leavening: 0.6,
+};
+
+// Computes the factor to actually apply to an ingredient's quantity, given
+// the recipe's overall scale factor. For 'linear' ingredients this is just
+// `factor`. For 'spice' and 'leavening', the deviation from 1x (no change)
+// is dampened by a fixed exponent, so a 4x batch might only get ~2.25x the
+// spice rather than a full 4x - and a half batch keeps more than half the
+// spice, since flavor doesn't disappear as fast as volume does.
+export function nonlinearScaleFactor(factor: number, category: IngredientCategory): number {
+  if (factor <= 0) {
+    throw new Error('scale factor must be positive');
+  }
+  if (category === 'linear') {
+    return factor;
+  }
+  return 1 + (factor - 1) * NONLINEAR_EXPONENTS[category];
 }
 
 export function scaleQuantity(quantity: Quantity, factor: number): Quantity {
@@ -20,7 +53,8 @@ export function scaleQuantity(quantity: Quantity, factor: number): Quantity {
 }
 
 export function scaleIngredient(ingredient: Ingredient, factor: number): Ingredient {
-  return { ...ingredient, quantity: scaleQuantity(ingredient.quantity, factor) };
+  const effectiveFactor = nonlinearScaleFactor(factor, ingredient.category ?? 'linear');
+  return { ...ingredient, quantity: scaleQuantity(ingredient.quantity, effectiveFactor) };
 }
 
 export function scaleRecipe(recipe: Recipe, factor: number): Recipe {

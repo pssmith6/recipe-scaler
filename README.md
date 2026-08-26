@@ -46,6 +46,33 @@ categories, or convert a count unit to a different unit, throws.
 factor from the recipe's own `servings` field. Neither mutates its input -
 both return a new `Recipe`.
 
+Not every ingredient should scale 1:1. Doubling a batch of cookies doesn't
+mean doubling the cinnamon or the baking soda - spices taste stronger than
+their volume suggests once a batch grows, and too much leavening ruins
+texture rather than just tasting different. Tag an ingredient with a
+`category` of `'spice'` or `'leavening'` and its effective factor is
+dampened toward 1x instead of following the recipe's factor exactly:
+
+```ts
+const gingerbread: Recipe = {
+  name: 'Gingerbread',
+  servings: 12,
+  ingredients: [
+    { name: 'flour', quantity: { amount: 3, unit: 'cup' } },
+    { name: 'ground ginger', quantity: { amount: 1, unit: 'tbsp' }, category: 'spice' },
+    { name: 'baking soda', quantity: { amount: 1, unit: 'tsp' }, category: 'leavening' },
+  ],
+};
+
+const forFortyEight = scaleRecipeToServings(gingerbread, 48); // 4x
+// flour: 12 cup (4x, linear)
+// ground ginger: 3.25 tbsp (~3.25x, not 4x)
+// baking soda: 2.8 tsp (~2.8x, not 4x)
+```
+
+Ingredients without a `category` (the default) scale linearly, same as
+before.
+
 Scaling produces exact decimals (5.625 cups), which isn't something anyone
 can actually measure. `roundQuantityToCookingFraction` rounds a scaled
 quantity to the nearest amount a cook could hit with standard cups and
@@ -70,11 +97,10 @@ applied once, right before a quantity is displayed to a cook.
 
 ## Status
 
-Linear scaling, same-category unit conversion, and fraction rounding for
-display. Not yet handled: non-linear adjustments (spices and leavening
-rarely scale 1:1), scaling by pan size, parsing quantities out of plain
-ingredient text, and volume/weight conversions across ingredients (which
-need density, not just a unit table).
+Linear and non-linear scaling, same-category unit conversion, and fraction
+rounding for display. Not yet handled: scaling by pan size, parsing
+quantities out of plain ingredient text, and volume/weight conversions
+across ingredients (which need density, not just a unit table).
 
 ## License
 
