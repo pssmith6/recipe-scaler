@@ -95,10 +95,31 @@ Both functions are separate from scaling on purpose: scaling stays exact so
 rounding error doesn't compound across repeated scale calls, and rounding is
 applied once, right before a quantity is displayed to a cook.
 
+A recipe written for one pan doesn't scale by servings when the real
+constraint is the pan you own. `scaleRecipeForPan` derives a factor from the
+surface area of the pan the recipe was written for versus the pan you're
+using, on the assumption (true for cakes, bars, and brownies; not for loaves
+or other deep pans) that batter depth stays roughly constant and the amount
+needed scales with footprint:
+
+```ts
+import { scaleRecipeForPan, Pan } from 'recipe-scaler';
+
+const nineInchRound: Pan = { shape: 'round', diameter: 9 };
+const nineByThirteen: Pan = { shape: 'rectangular', length: 13, width: 9 };
+
+const forSheet = scaleRecipeForPan(cookies, nineInchRound, nineByThirteen);
+// factor is (13 * 9) / (pi * 4.5^2) =~ 1.84
+```
+
+`Pan` also has a `square` variant (`{ shape: 'square', side }`). All
+dimensions are inches; `panArea` and `panScaleFactor` are exposed separately
+if you just need the numbers rather than a scaled recipe.
+
 ## Status
 
-Linear and non-linear scaling, same-category unit conversion, and fraction
-rounding for display. Not yet handled: scaling by pan size, parsing
+Linear and non-linear scaling, same-category unit conversion, fraction
+rounding for display, and area-based pan scaling. Not yet handled: parsing
 quantities out of plain ingredient text, and volume/weight conversions
 across ingredients (which need density, not just a unit table).
 
