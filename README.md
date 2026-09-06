@@ -116,12 +116,36 @@ const forSheet = scaleRecipeForPan(cookies, nineInchRound, nineByThirteen);
 dimensions are inches; `panArea` and `panScaleFactor` are exposed separately
 if you just need the numbers rather than a scaled recipe.
 
+Recipes are usually typed or copied as plain text, not entered field by
+field. `parseIngredientLine` turns a line like that into an `Ingredient`:
+
+```ts
+import { parseIngredientLine } from 'recipe-scaler';
+
+parseIngredientLine('2 1/4 cups flour');
+// { name: 'flour', quantity: { amount: 2.25, unit: 'cup' } }
+
+parseIngredientLine('1 tsp baking soda');
+// { name: 'baking soda', quantity: { amount: 1, unit: 'tsp' } }
+
+parseIngredientLine('2 eggs');
+// { name: 'eggs', quantity: { amount: 2, unit: 'unit' } }
+```
+
+It understands mixed numbers, plain fractions, decimals, and single-glyph
+fractions like "2¼", and recognizes common unit words and abbreviations
+(including plurals, like "cups" or "tablespoons"). A line whose leading
+word isn't a known unit is treated as a count, the same way `2 eggs` is
+above. It doesn't split off trailing notes ("2 cups flour, sifted" keeps
+", sifted" as part of the name) or spell out `category` - those still need
+to be set by hand.
+
 ## Status
 
 Linear and non-linear scaling, same-category unit conversion, fraction
-rounding for display, and area-based pan scaling. Not yet handled: parsing
-quantities out of plain ingredient text, and volume/weight conversions
-across ingredients (which need density, not just a unit table).
+rounding for display, area-based pan scaling, and parsing quantities out of
+plain ingredient text. Not yet handled: volume/weight conversions across
+ingredients (which need density, not just a unit table), and a test suite.
 
 ## License
 
