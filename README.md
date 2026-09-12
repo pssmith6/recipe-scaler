@@ -140,12 +140,25 @@ above. It doesn't split off trailing notes ("2 cups flour, sifted" keeps
 ", sifted" as part of the name) or spell out `category` - those still need
 to be set by hand.
 
+## Testing
+
+Tests run on Node's built-in test runner directly against the TypeScript
+source, using Node's native type-stripping support - no test framework or
+build step needed:
+
+```
+npm test
+```
+
+This requires Node 23.6 or later.
+
 ## Status
 
 Linear and non-linear scaling, same-category unit conversion, fraction
-rounding for display, area-based pan scaling, and parsing quantities out of
-plain ingredient text. Not yet handled: volume/weight conversions across
-ingredients (which need density, not just a unit table), and a test suite.
+rounding for display, area-based pan scaling, parsing quantities out of
+plain ingredient text, and a test suite covering conversion and parsing edge
+cases. Not yet handled: volume/weight conversions across ingredients, which
+need an ingredient's density rather than just a fixed unit table.
 
 ## License
 

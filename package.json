@@ -8,9 +8,13 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "node --test test/"
   },
   "license": "MIT",
+  "engines": {
+    "node": ">=23.6.0"
+  },
   "devDependencies": {
     "typescript": "^5.4.0"
   }
