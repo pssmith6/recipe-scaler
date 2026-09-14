@@ -140,6 +140,26 @@ above. It doesn't split off trailing notes ("2 cups flour, sifted" keeps
 ", sifted" as part of the name) or spell out `category` - those still need
 to be set by hand.
 
+`convertUnit` refuses to cross volume and weight because there's no fixed
+ratio between them - a cup of flour and a cup of honey don't weigh the same.
+`convertUnitByDensity` crosses that boundary given a density in grams per
+milliliter, and `lookupIngredientDensity` looks one up by ingredient name
+for a couple dozen common baking ingredients:
+
+```ts
+import { convertUnitByDensity, lookupIngredientDensity } from 'recipe-scaler';
+
+const flourDensity = lookupIngredientDensity('flour'); // 0.53 g/ml
+convertUnitByDensity({ amount: 1, unit: 'cup' }, 'g', flourDensity!);
+// { amount: 125.39..., unit: 'g' }
+```
+
+`lookupIngredientDensity` matches case-insensitively and returns `undefined`
+for anything not in the table - it doesn't guess. Within a single category
+(volume to volume, weight to weight) `convertUnitByDensity` just delegates
+to `convertUnit` and ignores the density argument, so it's safe to call
+whenever an ingredient's density is known, without checking units first.
+
 ## Testing
 
 Tests run on Node's built-in test runner directly against the TypeScript
@@ -154,11 +174,11 @@ This requires Node 23.6 or later.
 
 ## Status
 
-Linear and non-linear scaling, same-category unit conversion, fraction
-rounding for display, area-based pan scaling, parsing quantities out of
-plain ingredient text, and a test suite covering conversion and parsing edge
-cases. Not yet handled: volume/weight conversions across ingredients, which
-need an ingredient's density rather than just a fixed unit table.
+Linear and non-linear scaling, same-category unit conversion, density-based
+volume/weight conversion with a lookup table for common ingredients,
+fraction rounding for display, area-based pan scaling, parsing quantities
+out of plain ingredient text, and a test suite covering conversion and
+parsing edge cases.
 
 ## License
 

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { convertUnit, unitCategory } from '../src/units';
+import { convertUnit, convertUnitByDensity, lookupIngredientDensity, unitCategory } from '../src/units';
 
 test('unitCategory classifies each unit', () => {
   assert.equal(unitCategory('cup'), 'volume');
@@ -53,4 +53,48 @@ test('convertUnit does not mutate the input quantity', () => {
   const input = { amount: 1, unit: 'cup' } as const;
   convertUnit(input, 'ml');
   assert.deepEqual(input, { amount: 1, unit: 'cup' });
+});
+
+test('lookupIngredientDensity finds known ingredients case-insensitively', () => {
+  assert.equal(lookupIngredientDensity('Flour'), 0.53);
+  assert.equal(lookupIngredientDensity('  water '), 1);
+  assert.equal(lookupIngredientDensity('BUTTER'), 0.96);
+});
+
+test('lookupIngredientDensity returns undefined for unknown ingredients', () => {
+  assert.equal(lookupIngredientDensity('unobtainium'), undefined);
+});
+
+test('convertUnitByDensity converts a cup of water to grams at density 1', () => {
+  const result = convertUnitByDensity({ amount: 1, unit: 'cup' }, 'g', 1);
+  assert.ok(Math.abs(result.amount - 236.588) < 1e-6);
+  assert.equal(result.unit, 'g');
+});
+
+test('convertUnitByDensity converts flour by weight using its known density', () => {
+  const density = lookupIngredientDensity('flour')!;
+  const result = convertUnitByDensity({ amount: 1, unit: 'cup' }, 'g', density);
+  assert.ok(Math.abs(result.amount - 236.588 * 0.53) < 1e-6);
+});
+
+test('convertUnitByDensity converts weight back to volume', () => {
+  const density = lookupIngredientDensity('honey')!;
+  const grams = convertUnitByDensity({ amount: 1, unit: 'cup' }, 'g', density);
+  const backToCups = convertUnitByDensity(grams, 'cup', density);
+  assert.ok(Math.abs(backToCups.amount - 1) < 1e-9);
+});
+
+test('convertUnitByDensity delegates to convertUnit within the same category', () => {
+  const result = convertUnitByDensity({ amount: 2, unit: 'cup' }, 'ml', 0.53);
+  assert.ok(Math.abs(result.amount - 2 * 236.588) < 1e-6);
+});
+
+test('convertUnitByDensity throws for count units regardless of density', () => {
+  assert.throws(() => convertUnitByDensity({ amount: 2, unit: 'unit' }, 'g', 1));
+  assert.throws(() => convertUnitByDensity({ amount: 100, unit: 'g' }, 'unit', 1));
+});
+
+test('convertUnitByDensity rejects a non-positive density', () => {
+  assert.throws(() => convertUnitByDensity({ amount: 1, unit: 'cup' }, 'g', 0));
+  assert.throws(() => convertUnitByDensity({ amount: 1, unit: 'cup' }, 'g', -1));
 });
