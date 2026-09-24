@@ -1,4 +1,4 @@
-import { Quantity } from './units';
+import { Quantity, Unit, unitCategory, convertUnit, convertUnitByDensity, lookupIngredientDensity } from './units';
 
 // 'linear' (the default) scales 1:1 with the rest of the recipe. Spices and
 // leavening are potent in small amounts - doubling a batch doesn't mean
@@ -66,6 +66,29 @@ export function scaleRecipe(recipe: Recipe, factor: number): Recipe {
     servings: recipe.servings * factor,
     ingredients: recipe.ingredients.map((ingredient) => scaleIngredient(ingredient, factor)),
   };
+}
+
+// Converts an ingredient's quantity to a different unit, resolving density
+// from the ingredient's own name when the conversion crosses the
+// volume/weight boundary. An explicit densityGPerMl overrides the name
+// lookup, for ingredients not in the table or prepared in a way that changes
+// their density (packed vs. sifted flour, for instance).
+export function convertIngredientUnit(ingredient: Ingredient, toUnit: Unit, densityGPerMl?: number): Ingredient {
+  const fromCategory = unitCategory(ingredient.quantity.unit);
+  const toCategory = unitCategory(toUnit);
+
+  if (fromCategory === toCategory) {
+    return { ...ingredient, quantity: convertUnit(ingredient.quantity, toUnit) };
+  }
+
+  const density = densityGPerMl ?? lookupIngredientDensity(ingredient.name);
+  if (density === undefined) {
+    throw new Error(
+      `no known density for "${ingredient.name}" - pass densityGPerMl explicitly to convert between volume and weight`
+    );
+  }
+
+  return { ...ingredient, quantity: convertUnitByDensity(ingredient.quantity, toUnit, density) };
 }
 
 // Scales a recipe to a target number of servings, deriving the factor from

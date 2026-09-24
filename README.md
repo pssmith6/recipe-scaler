@@ -160,6 +160,22 @@ for anything not in the table - it doesn't guess. Within a single category
 to `convertUnit` and ignores the density argument, so it's safe to call
 whenever an ingredient's density is known, without checking units first.
 
+Looking up a density by hand only to feed it into `convertUnitByDensity` is
+the common case, so `convertIngredientUnit` does both steps at once,
+resolving density from the `Ingredient`'s own `name`:
+
+```ts
+import { convertIngredientUnit } from 'recipe-scaler';
+
+convertIngredientUnit({ name: 'flour', quantity: { amount: 1, unit: 'cup' } }, 'g');
+// { name: 'flour', quantity: { amount: 125.39..., unit: 'g' } }
+```
+
+An optional third argument overrides the name lookup, for an ingredient not
+in the table or prepared in a way that changes its density (packed versus
+sifted flour). Converting within a single category never needs a density
+and works for any ingredient name, known or not.
+
 ## Testing
 
 Tests run on Node's built-in test runner directly against the TypeScript
@@ -175,10 +191,11 @@ This requires Node 23.6 or later.
 ## Status
 
 Linear and non-linear scaling, same-category unit conversion, density-based
-volume/weight conversion with a lookup table for common ingredients,
-fraction rounding for display, area-based pan scaling, parsing quantities
-out of plain ingredient text, and a test suite covering conversion and
-parsing edge cases.
+volume/weight conversion with a lookup table for common ingredients and a
+name-resolving convenience wrapper for `Ingredient` values, fraction
+rounding for display, area-based pan scaling, parsing quantities out of
+plain ingredient text, and a test suite covering conversion and parsing edge
+cases.
 
 ## License
 
